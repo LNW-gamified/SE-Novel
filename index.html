@@ -1,0 +1,1384 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>The Meridian Deal — A Sales Enablement Visual Novel</title>
+<link href="https://fonts.googleapis.com/css2?family=Playfair+Display:ital,wght@0,400;0,700;0,900;1,400;1,700&family=Source+Code+Pro:wght@400;600&family=Lato:wght@300;400;700&display=swap" rel="stylesheet">
+<style>
+:root {
+  --bg: #080c14;
+  --surface: #0e1420;
+  --panel: #111827;
+  --border: #1e2d45;
+  --gold: #c9a84c;
+  --gold-dim: #6b5520;
+  --gold-glow: rgba(201,168,76,0.15);
+  --red: #c0392b;
+  --green: #27ae60;
+  --blue: #2980b9;
+  --text: #ddd8cc;
+  --muted: #6b7280;
+  --warn: #e67e22;
+}
+
+* { margin:0; padding:0; box-sizing:border-box; }
+
+body {
+  background: var(--bg);
+  color: var(--text);
+  font-family: 'Lato', sans-serif;
+  min-height: 100vh;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: flex-start;
+  overflow-x: hidden;
+}
+
+/* ── SCREENS ── */
+.screen { display:none; width:100%; max-width:900px; }
+.screen.active { display:block; }
+
+/* ══════════════════ TITLE SCREEN ══════════════════ */
+#screen-title {
+  min-height: 100vh;
+  display: none;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  padding: 40px 20px;
+  text-align: center;
+  position: relative;
+}
+#screen-title.active { display: flex; }
+
+.title-bg {
+  position: fixed;
+  inset: 0;
+  background:
+    radial-gradient(ellipse 60% 40% at 50% 30%, rgba(201,168,76,0.06) 0%, transparent 70%),
+    repeating-linear-gradient(0deg, transparent, transparent 80px, rgba(255,255,255,0.01) 80px, rgba(255,255,255,0.01) 81px),
+    repeating-linear-gradient(90deg, transparent, transparent 80px, rgba(255,255,255,0.01) 80px, rgba(255,255,255,0.01) 81px);
+  pointer-events: none;
+}
+
+.title-eyebrow {
+  font-family: 'Source Code Pro', monospace;
+  font-size: 11px;
+  letter-spacing: 5px;
+  color: var(--gold-dim);
+  text-transform: uppercase;
+  margin-bottom: 20px;
+  animation: fadeUp 1s ease both;
+}
+
+.title-main {
+  font-family: 'Playfair Display', serif;
+  font-size: clamp(38px, 7vw, 72px);
+  font-weight: 900;
+  color: var(--text);
+  line-height: 1.05;
+  margin-bottom: 8px;
+  animation: fadeUp 1s 0.2s ease both;
+}
+
+.title-sub {
+  font-family: 'Playfair Display', serif;
+  font-size: clamp(14px, 2.5vw, 22px);
+  font-style: italic;
+  color: var(--gold);
+  margin-bottom: 32px;
+  animation: fadeUp 1s 0.4s ease both;
+}
+
+.title-desc {
+  max-width: 520px;
+  font-size: 15px;
+  color: var(--muted);
+  line-height: 1.9;
+  margin-bottom: 32px;
+  animation: fadeUp 1s 0.5s ease both;
+}
+
+.framework-row {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 8px;
+  justify-content: center;
+  margin-bottom: 36px;
+  animation: fadeUp 1s 0.6s ease both;
+}
+
+.fw-badge {
+  font-family: 'Source Code Pro', monospace;
+  font-size: 10px;
+  letter-spacing: 2px;
+  padding: 5px 12px;
+  border: 1px solid var(--gold-dim);
+  color: var(--gold-dim);
+  text-transform: uppercase;
+}
+
+.start-btn {
+  font-family: 'Playfair Display', serif;
+  font-size: 18px;
+  font-style: italic;
+  padding: 16px 52px;
+  background: transparent;
+  border: 2px solid var(--gold);
+  color: var(--gold);
+  cursor: pointer;
+  letter-spacing: 2px;
+  transition: all 0.3s;
+  animation: fadeUp 1s 0.7s ease both;
+  position: relative;
+}
+.start-btn::before {
+  content: '';
+  position: absolute;
+  inset: 0;
+  background: var(--gold);
+  transform: scaleX(0);
+  transform-origin: left;
+  transition: transform 0.3s ease;
+  z-index: -1;
+}
+.start-btn:hover { color: var(--bg); }
+.start-btn:hover::before { transform: scaleX(1); }
+
+.credit-line {
+  margin-top: 48px;
+  font-size: 11px;
+  color: #2a3545;
+  font-family: 'Source Code Pro', monospace;
+  letter-spacing: 1px;
+  animation: fadeUp 1s 0.9s ease both;
+  line-height: 2;
+}
+.credit-line strong { color: #3a4a60; }
+
+/* ══════════════════ GAME SCREEN ══════════════════ */
+#screen-game {
+  min-height: 100vh;
+  padding: 0;
+}
+#screen-game.active { display: block; }
+
+/* Status bar */
+#statusBar {
+  background: var(--surface);
+  border-bottom: 1px solid var(--border);
+  padding: 10px 24px;
+  display: flex;
+  align-items: center;
+  gap: 20px;
+  font-family: 'Source Code Pro', monospace;
+  font-size: 11px;
+  position: sticky;
+  top: 0;
+  z-index: 50;
+}
+
+.status-item { display: flex; align-items: center; gap: 8px; color: var(--muted); }
+.status-val { color: var(--gold); font-weight: 600; }
+
+.meter-wrap { width: 80px; height: 6px; background: #1e2d45; position:relative; overflow:hidden; }
+.meter-fill { height: 100%; transition: width 0.6s ease; }
+.meter-fill.trust { background: var(--blue); }
+.meter-fill.deal { background: var(--green); }
+.meter-fill.deal.warn { background: var(--warn); }
+.meter-fill.deal.danger { background: var(--red); }
+
+.chapter-badge {
+  margin-left: auto;
+  font-size: 10px;
+  color: var(--gold-dim);
+  letter-spacing: 2px;
+}
+
+/* Scene area */
+#sceneArea {
+  position: relative;
+  height: 320px;
+  overflow: hidden;
+  background: var(--bg);
+}
+
+.scene-bg {
+  position: absolute;
+  inset: 0;
+  transition: opacity 0.8s ease;
+}
+
+/* Character portrait */
+#characterWrap {
+  position: absolute;
+  bottom: 0;
+  left: 50%;
+  transform: translateX(-50%);
+  width: 260px;
+  height: 300px;
+  transition: all 0.5s ease;
+}
+
+.char-portrait {
+  width: 100%;
+  height: 100%;
+  position: relative;
+  display: none;
+}
+.char-portrait.active { display: block; }
+
+/* CSS character illustrations */
+.char-body {
+  position: absolute;
+  bottom: 0;
+  left: 50%;
+  transform: translateX(-50%);
+}
+
+/* Floating name card */
+#charNameCard {
+  position: absolute;
+  top: 16px;
+  left: 24px;
+  background: rgba(8,12,20,0.85);
+  border-left: 3px solid var(--gold);
+  padding: 8px 16px;
+  backdrop-filter: blur(4px);
+}
+#charNameCard .char-name { font-family:'Playfair Display',serif; font-size:16px; color:var(--text); }
+#charNameCard .char-role { font-size:11px; color:var(--muted); margin-top:2px; font-family:'Source Code Pro',monospace; }
+
+/* Mood indicator */
+#moodBadge {
+  position: absolute;
+  top: 16px;
+  right: 24px;
+  font-family: 'Source Code Pro', monospace;
+  font-size: 10px;
+  letter-spacing: 2px;
+  padding: 5px 12px;
+  border: 1px solid;
+  text-transform: uppercase;
+  transition: all 0.4s;
+}
+
+/* Scene label */
+#sceneLabel {
+  position: absolute;
+  bottom: 16px;
+  right: 24px;
+  font-family: 'Source Code Pro', monospace;
+  font-size: 10px;
+  color: var(--gold-dim);
+  letter-spacing: 3px;
+  text-transform: uppercase;
+}
+
+/* Consequence flags */
+#flagsRow {
+  position: absolute;
+  bottom: 16px;
+  left: 24px;
+  display: flex;
+  gap: 6px;
+}
+.flag {
+  font-size: 9px;
+  font-family: 'Source Code Pro', monospace;
+  padding: 3px 8px;
+  border: 1px solid;
+  letter-spacing: 1px;
+}
+.flag.bad { border-color: var(--red); color: var(--red); }
+.flag.good { border-color: var(--green); color: var(--green); }
+
+/* Dialogue panel */
+#dialogPanel {
+  background: linear-gradient(180deg, rgba(8,12,20,0) 0%, var(--bg) 30%);
+  padding: 0 24px 24px;
+  min-height: 280px;
+}
+
+.chapter-header {
+  font-family: 'Source Code Pro', monospace;
+  font-size: 10px;
+  letter-spacing: 4px;
+  color: var(--gold-dim);
+  text-transform: uppercase;
+  margin-bottom: 6px;
+  padding-top: 8px;
+}
+
+.scene-title-text {
+  font-family: 'Playfair Display', serif;
+  font-size: clamp(22px, 4vw, 34px);
+  font-weight: 900;
+  color: var(--text);
+  margin-bottom: 12px;
+  line-height: 1.1;
+}
+
+.narration {
+  font-style: italic;
+  color: #8a9ab0;
+  font-size: 15px;
+  line-height: 1.9;
+  margin-bottom: 16px;
+  padding-left: 12px;
+  border-left: 2px solid var(--border);
+}
+
+.consequence-banner {
+  background: rgba(192,57,43,0.1);
+  border: 1px solid rgba(192,57,43,0.3);
+  padding: 10px 14px;
+  margin-bottom: 14px;
+  font-size: 13px;
+  color: #e07060;
+  font-style: italic;
+  display: none;
+}
+.consequence-banner.show { display: block; }
+.consequence-banner.good-banner { background: rgba(39,174,96,0.1); border-color: rgba(39,174,96,0.3); color: #70c080; }
+
+.speech-wrap {
+  background: var(--panel);
+  border: 1px solid var(--border);
+  border-left: 3px solid var(--gold);
+  padding: 18px 20px;
+  margin-bottom: 20px;
+  position: relative;
+}
+.speech-speaker {
+  font-family: 'Source Code Pro', monospace;
+  font-size: 11px;
+  color: var(--gold);
+  letter-spacing: 2px;
+  margin-bottom: 8px;
+  text-transform: uppercase;
+}
+.speech-text {
+  font-size: 16px;
+  line-height: 1.8;
+  color: var(--text);
+  font-family: 'Lato', sans-serif;
+}
+
+.method-callout {
+  background: rgba(201,168,76,0.05);
+  border: 1px solid var(--gold-dim);
+  padding: 10px 14px;
+  margin-bottom: 18px;
+  display: flex;
+  gap: 10px;
+  align-items: flex-start;
+}
+.method-tag {
+  font-family: 'Source Code Pro', monospace;
+  font-size: 9px;
+  background: var(--gold);
+  color: var(--bg);
+  padding: 3px 8px;
+  font-weight: 700;
+  white-space: nowrap;
+  flex-shrink: 0;
+  margin-top: 1px;
+  letter-spacing: 1px;
+}
+.method-hint { font-size: 13px; color: var(--muted); line-height: 1.6; }
+
+/* Choices */
+.choices-header {
+  font-family: 'Source Code Pro', monospace;
+  font-size: 10px;
+  letter-spacing: 3px;
+  color: var(--muted);
+  margin-bottom: 12px;
+  text-transform: uppercase;
+}
+
+.choices-grid { display: flex; flex-direction: column; gap: 8px; margin-bottom: 24px; }
+
+.choice-card {
+  background: var(--panel);
+  border: 1px solid var(--border);
+  padding: 14px 18px;
+  cursor: pointer;
+  display: flex;
+  gap: 14px;
+  align-items: flex-start;
+  transition: all 0.2s;
+  text-align: left;
+  width: 100%;
+  font-family: 'Lato', sans-serif;
+}
+.choice-card:hover {
+  border-color: var(--gold);
+  background: rgba(201,168,76,0.05);
+  transform: translateX(3px);
+}
+.choice-letter {
+  font-family: 'Source Code Pro', monospace;
+  font-size: 12px;
+  color: var(--gold);
+  font-weight: 700;
+  flex-shrink: 0;
+  margin-top: 2px;
+  min-width: 20px;
+}
+.choice-text { font-size: 15px; color: var(--text); line-height: 1.6; }
+
+/* Feedback overlay */
+#feedbackPanel {
+  display: none;
+  padding: 0 24px 24px;
+  animation: fadeUp 0.3s ease;
+}
+
+.feedback-result {
+  padding: 20px 22px;
+  margin-bottom: 16px;
+  border: 1px solid;
+  position: relative;
+}
+.feedback-result.good { border-color: var(--green); background: rgba(39,174,96,0.06); }
+.feedback-result.bad { border-color: var(--red); background: rgba(192,57,43,0.06); }
+.feedback-result.neutral { border-color: var(--gold-dim); background: rgba(201,168,76,0.04); }
+.feedback-result.trap { border-color: var(--warn); background: rgba(230,126,34,0.06); }
+
+.feedback-header-text {
+  font-family: 'Playfair Display', serif;
+  font-size: 20px;
+  font-weight: 700;
+  margin-bottom: 10px;
+}
+.feedback-result.good .feedback-header-text { color: #4eca7a; }
+.feedback-result.bad .feedback-header-text { color: #e05545; }
+.feedback-result.neutral .feedback-header-text { color: var(--gold); }
+.feedback-result.trap .feedback-header-text { color: var(--warn); }
+
+.feedback-body { font-size: 15px; line-height: 1.8; color: #b0b8c4; margin-bottom: 14px; }
+
+.coaching-block {
+  border-top: 1px solid var(--border);
+  padding-top: 12px;
+  font-family: 'Source Code Pro', monospace;
+  font-size: 12px;
+  color: var(--muted);
+  line-height: 1.8;
+}
+.coaching-block .fw { color: var(--gold-dim); font-weight: 600; }
+
+.consequence-note {
+  margin-top: 12px;
+  padding: 10px 14px;
+  background: rgba(230,126,34,0.08);
+  border: 1px solid rgba(230,126,34,0.2);
+  font-size: 13px;
+  color: var(--warn);
+  font-style: italic;
+  display: none;
+}
+.consequence-note.show { display: block; }
+
+.next-btn {
+  font-family: 'Playfair Display', serif;
+  font-size: 16px;
+  font-style: italic;
+  padding: 14px 40px;
+  background: transparent;
+  border: 2px solid var(--gold);
+  color: var(--gold);
+  cursor: pointer;
+  letter-spacing: 1px;
+  transition: all 0.3s;
+  margin-top: 8px;
+}
+.next-btn:hover { background: var(--gold); color: var(--bg); }
+
+/* Score screen */
+#screen-score {
+  min-height: 100vh;
+  display: none;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  padding: 60px 24px;
+  text-align: center;
+}
+#screen-score.active { display: flex; }
+
+.score-eyebrow { font-family:'Source Code Pro',monospace; font-size:11px; letter-spacing:4px; color:var(--gold-dim); margin-bottom:12px; }
+.score-big { font-family:'Playfair Display',serif; font-size: clamp(80px,15vw,140px); color:var(--gold); line-height:1; }
+.score-tier-text { font-family:'Playfair Display',serif; font-size:24px; font-weight:700; margin:12px 0; }
+.score-comment { font-size:15px; color:var(--muted); max-width:500px; line-height:1.9; margin-bottom:28px; }
+
+.score-log {
+  width: 100%;
+  max-width: 560px;
+  background: var(--panel);
+  border: 1px solid var(--border);
+  margin-bottom: 28px;
+}
+.log-row {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  padding: 10px 16px;
+  border-bottom: 1px solid var(--border);
+  font-size: 13px;
+}
+.log-row:last-child { border-bottom: none; }
+.log-chapter { color: var(--muted); font-family:'Source Code Pro',monospace; font-size:11px; }
+.log-result { font-size: 13px; }
+.log-pts { font-family:'Source Code Pro',monospace; color:var(--gold); font-weight:700; }
+
+.flags-summary {
+  width: 100%;
+  max-width: 560px;
+  margin-bottom: 24px;
+}
+.flags-summary h3 {
+  font-family:'Source Code Pro',monospace;
+  font-size:10px;
+  letter-spacing:3px;
+  color:var(--muted);
+  margin-bottom:10px;
+  text-align:left;
+}
+.flags-grid { display:flex; flex-wrap:wrap; gap:6px; }
+
+.replay-btn {
+  font-family:'Playfair Display',serif;
+  font-size:18px;
+  font-style:italic;
+  padding:16px 48px;
+  background:transparent;
+  border:2px solid var(--gold);
+  color:var(--gold);
+  cursor:pointer;
+  transition:all 0.3s;
+}
+.replay-btn:hover { background:var(--gold); color:var(--bg); }
+
+/* Animations */
+@keyframes fadeUp {
+  from { opacity:0; transform:translateY(16px); }
+  to { opacity:1; transform:translateY(0); }
+}
+
+@keyframes pulseGlow {
+  0%,100% { box-shadow: 0 0 0 rgba(201,168,76,0); }
+  50% { box-shadow: 0 0 20px rgba(201,168,76,0.15); }
+}
+
+.scene-enter { animation: fadeUp 0.4s ease both; }
+
+/* Divider */
+hr.gold-rule { border:none; border-top:1px solid var(--gold-dim); margin:16px 0; opacity:0.4; }
+
+/* Mobile */
+@media (max-width:600px) {
+  #sceneArea { height:220px; }
+  .scene-title-text { font-size:22px; }
+  .speech-text { font-size:14px; }
+  .choice-text { font-size:14px; }
+}
+</style>
+</head>
+<body>
+
+<!-- ══ TITLE SCREEN ══ -->
+<div id="screen-title" class="screen">
+  <div class="title-bg"></div>
+  <div class="title-eyebrow">A Sales Enablement Experience</div>
+  <h1 class="title-main">The Meridian Deal</h1>
+  <div class="title-sub">Every choice has consequences. Not all of them are obvious.</div>
+  <p class="title-desc">
+    Navigate a high-stakes enterprise deal from cold intro to close. Face gatekeepers, skeptics, and political traps. One wrong move doesn't end your deal — but it changes everything that comes after.
+  </p>
+  <div class="framework-row">
+    <span class="fw-badge">MEDDIC</span>
+    <span class="fw-badge">SPIN Selling</span>
+    <span class="fw-badge">Challenger Sale</span>
+    <span class="fw-badge">Objection Handling</span>
+    <span class="fw-badge">Negotiation</span>
+    <span class="fw-badge">Champion Building</span>
+  </div>
+  <button class="start-btn" onclick="startGame()">Begin the Deal →</button>
+  <div class="credit-line">
+    Designed &amp; built with AI by <strong>[Your Name]</strong> · L&amp;D &amp; AI Enablement Portfolio<br>
+    An interactive demonstration of AI-assisted learning design · <strong>salesquest.demo</strong>
+  </div>
+</div>
+
+<!-- ══ GAME SCREEN ══ -->
+<div id="screen-game" class="screen">
+  <div id="statusBar">
+    <div class="status-item">
+      <span>TRUST</span>
+      <div class="meter-wrap"><div class="meter-fill trust" id="trustMeter" style="width:50%"></div></div>
+      <span class="status-val" id="trustVal">50</span>
+    </div>
+    <div class="status-item">
+      <span>DEAL HEALTH</span>
+      <div class="meter-wrap"><div class="meter-fill deal" id="dealMeter" style="width:100%"></div></div>
+      <span class="status-val" id="dealVal">100</span>
+    </div>
+    <div class="status-item">
+      <span>SCORE</span>
+      <span class="status-val" id="scoreVal">0</span>
+    </div>
+    <div class="chapter-badge" id="chapterBadge">CHAPTER 1 · THE INTRO CALL</div>
+  </div>
+
+  <div id="sceneArea">
+    <div class="scene-bg" id="sceneBg"></div>
+    <div id="charNameCard" style="display:none">
+      <div class="char-name" id="charName"></div>
+      <div class="char-role" id="charRole"></div>
+    </div>
+    <div id="moodBadge"></div>
+    <div id="sceneLabel"></div>
+    <div id="flagsRow"></div>
+  </div>
+
+  <div id="dialogPanel">
+    <div id="sceneContent" class="scene-enter"></div>
+  </div>
+
+  <div id="feedbackPanel"></div>
+</div>
+
+<!-- ══ SCORE SCREEN ══ -->
+<div id="screen-score" class="screen">
+  <div class="score-eyebrow">DEAL COMPLETE</div>
+  <div class="score-big" id="finalScore">0</div>
+  <div class="score-tier-text" id="finalTier"></div>
+  <p class="score-comment" id="finalComment"></p>
+  <div class="score-log" id="scoreLog"></div>
+  <div class="flags-summary">
+    <h3>— DEAL FLAGS ACQUIRED —</h3>
+    <div class="flags-grid" id="finalFlags"></div>
+  </div>
+  <button class="replay-btn" onclick="resetGame()">Play Again →</button>
+  <div style="margin-top:24px;font-size:11px;color:#1e2d45;font-family:'Source Code Pro',monospace;">
+    The Meridian Deal · Sales Enablement Portfolio Demo
+  </div>
+</div>
+
+<script>
+// ══════════════════════════════════════════
+//  STATE
+// ══════════════════════════════════════════
+let state = {
+  trust: 50,
+  deal: 100,
+  score: 0,
+  flags: [],   // consequence flags carried forward
+  log: [],
+  chapter: 0,
+};
+
+// Scene background gradients
+const bgStyles = {
+  office:     'linear-gradient(180deg,#0a0e1a 0%,#111827 60%,#0d1520 100%)',
+  conference: 'linear-gradient(180deg,#0d0a14 0%,#160f20 60%,#0a0810 100%)',
+  lobby:      'linear-gradient(180deg,#0a1210 0%,#101e18 60%,#080e0c 100%)',
+  exec:       'linear-gradient(180deg,#100a08 0%,#1a100a 60%,#0d0806 100%)',
+  reset:      'linear-gradient(180deg,#140a0a 0%,#200c0c 60%,#100606 100%)',
+  close:      'linear-gradient(180deg,#0a1020 0%,#0f1830 60%,#080c18 100%)',
+};
+
+const moodStyles = {
+  neutral:   { text:'NEUTRAL',    bg:'rgba(107,114,128,0.15)', border:'#374151',    color:'#9ca3af' },
+  warm:      { text:'RECEPTIVE',  bg:'rgba(39,174,96,0.1)',    border:'#1a5c38',    color:'#4eca7a' },
+  cold:      { text:'RESISTANT',  bg:'rgba(192,57,43,0.1)',    border:'#6b1a14',    color:'#e05545' },
+  guarded:   { text:'GUARDED',    bg:'rgba(230,126,34,0.1)',   border:'#6b3a10',    color:'#e8943a' },
+  impressed: { text:'IMPRESSED',  bg:'rgba(41,128,185,0.12)',  border:'#1a4a6b',    color:'#5ba3d0' },
+  angry:     { text:'HOSTILE',    bg:'rgba(192,57,43,0.2)',    border:'#8b1a14',    color:'#e05545' },
+};
+
+// ══════════════════════════════════════════
+//  CHAPTERS
+// ══════════════════════════════════════════
+const chapters = [
+
+  // ─── CH 0: THE COLD INTRO ───
+  {
+    id: 'intro_call',
+    bg: 'office',
+    chapter: 'CHAPTER 1',
+    title: 'The Intro Call',
+    charName: 'Dana Reeves',
+    charRole: 'Director of Sales Operations · Meridian Health',
+    charMood: 'neutral',
+    narration: "It's 8:47 AM. Dana Reeves picks up on the third ring. You have sixty seconds before she decides whether this call is worth her time.",
+    consequence: null,
+    speech: { speaker: 'DANA REEVES', text: "I've got about five minutes. I get a lot of these calls, so — what makes yours different?" },
+    method: 'SPIN Selling', methodHint: 'Situation questions establish context. But opening with your product is the fastest way to get hung up on. Lead with curiosity, not capability.',
+    sceneLabel: 'THE COLD CALL',
+    choices: [
+      {
+        text: "Fair enough. Before I tell you about us — I've been looking at Meridian's Q3 results. The rep ramp time you're reporting is almost double the industry benchmark. I'm curious what's driving that.",
+        quality: 'good', pts: 28,
+        header: 'Challenger Opening',
+        feedback: "This is the right move. You led with insight about their business, not a pitch about yours. Dana now has a reason to keep talking — you've shown you've done your homework and you're focused on her problem, not your quota.",
+        coaching: "CHALLENGER: Leading with a provocative insight reframes you as a peer, not a vendor. 'Your ramp time is double the benchmark' is a conversation starter Dana can't ignore.",
+        setFlag: null, trustDelta: 15, dealDelta: 5,
+        next: 'discovery_1'
+      },
+      {
+        text: "We help sales teams ramp faster and hit quota more consistently. I'd love to learn about your current onboarding process — do you have a few minutes to share?",
+        quality: 'neutral', pts: 10,
+        header: 'Generic Value Prop',
+        feedback: "It's polished but forgettable. 'Ramp faster and hit quota' is what every vendor says. Dana has heard this opening a hundred times. You've survived the call but you haven't earned real curiosity.",
+        coaching: "SPIN TIP: 'We help with X' opens with your solution, not their problem. Flip it: start with an observation about their world, then invite them to confirm or correct it.",
+        setFlag: null, trustDelta: 0, dealDelta: 0,
+        next: 'discovery_1'
+      },
+      {
+        text: "Happy to make this quick — I'll send over our one-pager and if anything resonates, we can set up a proper call.",
+        quality: 'bad', pts: 0,
+        header: 'Self-Defeating Retreat',
+        feedback: "You just disqualified yourself. Offering to 'send a one-pager' before earning any interest signals low confidence and guarantees this goes into a folder she never opens. She gave you five minutes — use them.",
+        coaching: "OBJECTION TIP: Dana wasn't objecting, she was testing. Retreating to email at the first sign of friction is a common new-rep mistake. Hold the line and ask a question.",
+        setFlag: { name: 'WEAK OPENER', type: 'bad' }, trustDelta: -15, dealDelta: -10,
+        next: 'discovery_1'
+      },
+    ]
+  },
+
+  // ─── CH 1: DISCOVERY ───
+  {
+    id: 'discovery_1',
+    bg: 'office',
+    chapter: 'CHAPTER 2',
+    title: 'Discovery',
+    charName: 'Dana Reeves',
+    charRole: 'Director of Sales Operations · Meridian Health',
+    charMood: 'neutral',
+    narration: "Dana opens up. She's talking about her onboarding process — new reps, fragmented tools, three different managers with three different styles. There's real pain here. The question is how deep you go.",
+    consequence: { flagTrigger: 'WEAK OPENER', text: "Dana is slightly guarded from your opening. She's sharing, but holding back the real numbers.", type:'bad' },
+    speech: { speaker: 'DANA REEVES', text: "Honestly the biggest issue is consistency. Every manager runs onboarding differently. By the time a new rep is actually selling, it's been twelve weeks and half of them are already doubting themselves." },
+    method: 'SPIN — Implication', methodHint: "Dana's described the problem. Now you need to make the implication real — what does twelve weeks of inconsistent onboarding actually cost? Don't answer for her. Ask.",
+    sceneLabel: 'DISCOVERY CALL',
+    choices: [
+      {
+        text: "Twelve weeks is significant. What does that cost you in terms of missed pipeline — both the deals those reps aren't closing and the manager time going into firefighting?",
+        quality: 'good', pts: 28,
+        header: 'Implication Question',
+        feedback: "Excellent SPIN move. You didn't tell Dana her problem was expensive — you asked her to calculate it herself. When the prospect quantifies the pain, it becomes real in a way no vendor number ever could.",
+        coaching: "SPIN — IMPLICATION: The implication question forces the prospect to articulate the downstream cost of their problem. 'What does that cost you in pipeline?' is more powerful than any ROI calculator you could show.",
+        setFlag: { name: 'QUANTIFIED PAIN', type: 'good' }, trustDelta: 15, dealDelta: 10,
+        next: 'champion_intro'
+      },
+      {
+        text: "That's exactly the problem we solve. Our platform standardizes the onboarding experience across all managers — want me to walk you through how it works?",
+        quality: 'bad', pts: 2,
+        header: 'Premature Solution',
+        feedback: "You jumped to solution before the problem was fully developed. Dana hasn't told you the scale, the cost, or the urgency yet — and you're already pitching. This is the single most common discovery mistake.",
+        coaching: "SPIN TIP: The 'I' in SPIN (Implication) is the most skipped step. Don't move to solution until the prospect has articulated what the problem is costing them. Ask one more question.",
+        setFlag: { name: 'RUSHED DISCOVERY', type: 'bad' }, trustDelta: -10, dealDelta: -10,
+        next: 'champion_intro'
+      },
+      {
+        text: "When you say they're doubting themselves — what does that look like in practice? Are you losing reps, or is it more of a performance issue?",
+        quality: 'good', pts: 22,
+        header: 'Problem Deepening',
+        feedback: "Smart. You went deeper on the human side of the problem — retention vs. performance is a critical distinction that will shape your entire proposal. This is genuine discovery, not just checkbox qualification.",
+        coaching: "SPIN — SITUATION: 'What does that look like in practice' surfaces the specific shape of the problem. Different problems require different solutions — and different business cases.",
+        setFlag: { name: 'DEEP DISCOVERY', type: 'good' }, trustDelta: 12, dealDelta: 8,
+        next: 'champion_intro'
+      },
+    ]
+  },
+
+  // ─── CH 2: CHAMPION INTRO ───
+  {
+    id: 'champion_intro',
+    bg: 'office',
+    chapter: 'CHAPTER 3',
+    title: 'The Champion Question',
+    charName: 'Dana Reeves',
+    charRole: 'Director of Sales Operations · Meridian Health',
+    charMood: 'warm',
+    narration: "The call is going well. Dana is engaged. She mentions that her VP of Revenue — Marcus Webb — is ultimately the one who'd sign off on something like this. You have a decision to make.",
+    consequence: { flagTrigger: 'RUSHED DISCOVERY', text: "Dana seems less invested. She's moving quickly — like she's humoring you rather than actively problem-solving.", type:'bad' },
+    speech: { speaker: 'DANA REEVES', text: "This is all really relevant. Honestly, you'd need to talk to Marcus — he's my VP and he controls the budget for anything over fifty thousand. I can pass along your info if you want." },
+    method: 'MEDDIC — Champion + Economic Buyer', methodHint: "Dana is not the Economic Buyer. She's potentially your Champion — but only if you invest in her. Blindly chasing Marcus without Dana's buy-in is a classic trap.",
+    sceneLabel: 'CHAMPION BUILDING',
+    choices: [
+      {
+        text: "I'd love to connect with Marcus — and I want to make sure when we do, it's a conversation worth his time. Could you and I spend another 30 minutes so I understand enough to make that meeting count?",
+        quality: 'good', pts: 30,
+        header: 'Champion Investment',
+        feedback: "This is the move. You've signaled to Dana that she matters — not just as a path to Marcus, but as a partner. Champions who feel valued become internal advocates. Champions who feel used become obstacles.",
+        coaching: "MEDDIC — CHAMPION: A champion needs three things: access, credibility, and motivation. By investing in Dana now, you're building all three. The meeting with Marcus will be 10x better because of it.",
+        setFlag: { name: 'STRONG CHAMPION', type: 'good' }, trustDelta: 20, dealDelta: 15,
+        next: 'internal_politics'
+      },
+      {
+        text: "Absolutely — I'll send you a calendar link for Marcus. What's the best email to reach him directly?",
+        quality: 'bad', pts: 0,
+        header: 'Champion Bypass',
+        feedback: "You just made Dana feel like a secretary. Going around your champion to the economic buyer without preparation is almost always fatal. Marcus will get a cold email from someone Dana barely knows. It will be ignored.",
+        coaching: "MEDDIC TIP: Bypassing your champion to reach the economic buyer destroys the relationship you need most. Dana needed to feel like a valued partner, not a stepping stone.",
+        setFlag: { name: 'DAMAGED CHAMPION', type: 'bad' }, trustDelta: -20, dealDelta: -20,
+        next: 'internal_politics'
+      },
+      {
+        text: "That would be great. Before I reach out to Marcus — can you tell me how he typically evaluates tools like this? What does he care about most?",
+        quality: 'good', pts: 22,
+        header: 'Executive Profiling',
+        feedback: "Smart — you're using Dana to profile Marcus before the meeting. Knowing whether he leads with ROI, risk mitigation, or strategic vision completely changes how you position the conversation.",
+        coaching: "CHAMPION TIP: Always ask your champion: 'What does this person care about most?' and 'What would make this a win for them?' This intelligence is worth more than any discovery call with the exec.",
+        setFlag: { name: 'EXEC INTEL', type: 'good' }, trustDelta: 14, dealDelta: 10,
+        next: 'internal_politics'
+      },
+    ]
+  },
+
+  // ─── CH 3: INTERNAL POLITICS ───
+  {
+    id: 'internal_politics',
+    bg: 'conference',
+    chapter: 'CHAPTER 4',
+    title: 'Internal Politics',
+    charName: 'Dana Reeves',
+    charRole: 'Director of Sales Operations · Meridian Health',
+    charMood: 'guarded',
+    narration: "In a follow-up call, Dana drops something unexpected. There's a competing initiative internally — the IT director has been pushing a homegrown solution for months. Marcus is torn.",
+    consequence: { flagTrigger: 'DAMAGED CHAMPION', text: "Dana seems distracted, a little resentful. She's sharing information but not volunteering it. The warmth from before is gone.", type:'bad' },
+    speech: { speaker: 'DANA REEVES', text: "I should tell you — Tom in IT has been building something in-house for the last eight months. It's not great, but Marcus has sunk political capital into it. He doesn't love the idea of going external and making Tom look bad." },
+    method: 'Political Awareness + Objection Handling', methodHint: "This is a political landmine. The real objection isn't price or features — it's Marcus protecting a relationship. Ignore this at your peril.",
+    sceneLabel: 'POLITICAL TRAP',
+    choices: [
+      {
+        text: "That's really important context. Can I ask — what does Tom's solution actually do well? I want to understand what we'd need to complement, not replace, what he's built.",
+        quality: 'good', pts: 28,
+        header: 'Political Reframe',
+        feedback: "Brilliant. Instead of attacking Tom's solution, you're looking for ways to position alongside it. This removes the political threat and gives Marcus a narrative where nobody loses face. Tom becomes a collaborator, not a casualty.",
+        coaching: "POLITICAL TIP: In complex sales, the hidden objection is often about internal relationships, not product features. Find a framing where existing investments are protected, not threatened.",
+        setFlag: { name: 'POLITICAL ALLY', type: 'good' }, trustDelta: 18, dealDelta: 15,
+        next: 'the_skeptic'
+      },
+      {
+        text: "I understand the dynamic. Do you think Marcus would be open to a side-by-side comparison? If our solution objectively performs better, the data should make the decision.",
+        quality: 'neutral', pts: 10,
+        header: 'Data Over Politics',
+        feedback: "The instinct is right — let the data speak. But 'objective comparisons' rarely resolve political problems. Marcus isn't protecting Tom's solution because of data. He's protecting a relationship. Data alone won't solve that.",
+        coaching: "TIP: In enterprise deals, logical arguments rarely defeat political ones. You need to address the relationship dimension directly, not just outperform on specs.",
+        setFlag: null, trustDelta: 0, dealDelta: -5,
+        next: 'the_skeptic'
+      },
+      {
+        text: "I appreciate you telling me. I wouldn't worry too much about Tom — once Marcus sees the ROI difference, the business case will make the decision obvious.",
+        quality: 'bad', pts: 0,
+        header: 'Dismissing the Politics',
+        feedback: "You just told Dana not to worry about a real political problem — which is both condescending and wrong. Marcus will protect Tom because relationships matter more than ROI charts. Dismissing this is how deals die at the finish line.",
+        coaching: "TRAP: 'The data will make it obvious' is one of the most dangerous assumptions in enterprise sales. Rational arguments rarely override political ones. You needed to take this seriously.",
+        setFlag: { name: 'IGNORED POLITICS', type: 'bad' }, trustDelta: -15, dealDelta: -20,
+        next: 'the_skeptic'
+      },
+    ]
+  },
+
+  // ─── CH 4: THE SKEPTIC ───
+  {
+    id: 'the_skeptic',
+    bg: 'conference',
+    chapter: 'CHAPTER 5',
+    title: 'The Skeptic in the Room',
+    charName: 'Tom Briggs',
+    charRole: 'Director of IT · Meridian Health',
+    charMood: 'cold',
+    narration: "The executive meeting. Marcus invited Tom. Tom sits with his arms crossed, jaw tight. He's heard about you. He doesn't like what he's heard.",
+    consequence: { flagTrigger: 'IGNORED POLITICS', text: "Tom seems primed for a fight. Dana warned him you dismissed his work. The temperature in the room just dropped.", type:'bad' },
+    speech: { speaker: 'TOM BRIGGS', text: "I'll be straight with you. We've been building our own solution for eight months. It's not perfect, but it's ours — and it knows our systems. What makes you think an outside vendor understands our environment better than we do?" },
+    method: 'Objection Handling — Trust & Credibility', methodHint: "Tom is protecting his work and his ego. Attack either and you lose the room. Acknowledge the value of what he's built before you earn the right to expand on it.",
+    sceneLabel: 'THE SKEPTIC',
+    choices: [
+      {
+        text: "Eight months of internal work means you understand your systems at a depth no outside vendor can match. I'm not here to replace that — I'm curious what you've built and where you've run into the hardest problems.",
+        quality: 'good', pts: 30,
+        header: 'Disarm With Respect',
+        feedback: "You've turned a potential enemy into a potential ally. Tom built something real — acknowledging that costs you nothing and earns you everything. Now he's explaining his challenges instead of defending his turf.",
+        coaching: "CHALLENGER TIP: The hardest objections aren't about features — they're about ego and identity. 'I want to understand what you've built' reframes you as a collaborator, not a competitor.",
+        setFlag: { name: 'TOM NEUTRALIZED', type: 'good' }, trustDelta: 20, dealDelta: 15,
+        next: 'executive_meeting'
+      },
+      {
+        text: "That's a fair question. Our clients typically see results in 60 days — faster than most internal builds reach full functionality. I can show you a comparison if that's useful.",
+        quality: 'neutral', pts: 10,
+        header: 'Feature Comparison',
+        feedback: "You answered the surface question but missed the emotional one. Tom isn't really asking about timelines — he's asking whether his work matters. Starting with a comparison makes it feel like a competition, not a conversation.",
+        coaching: "TIP: When someone defends their own work, validate it before comparing. 'Eight months is a serious investment' acknowledges the effort before you introduce alternatives.",
+        setFlag: null, trustDelta: -5, dealDelta: 0,
+        next: 'executive_meeting'
+      },
+      {
+        text: "With respect, internal builds in this space typically struggle with change management and adoption — not because of technical quality, but because reps treat external tools as more credible.",
+        quality: 'bad', pts: 0,
+        header: 'Direct Attack',
+        feedback: "You just insulted Tom's eight months of work in front of his VP. Even if you're right, this was the wrong room and the wrong moment. Tom is now an active enemy. Marcus is uncomfortable. Dana is wincing.",
+        coaching: "TRAP: Being technically correct while being politically tone-deaf is how salespeople lose deals they should win. The room just turned against you.",
+        setFlag: { name: 'TOM IS HOSTILE', type: 'bad' }, trustDelta: -25, dealDelta: -25,
+        next: 'executive_meeting'
+      },
+    ]
+  },
+
+  // ─── CH 5: EXECUTIVE MEETING ───
+  {
+    id: 'executive_meeting',
+    bg: 'exec',
+    chapter: 'CHAPTER 6',
+    title: "The VP's Office",
+    charName: 'Marcus Webb',
+    charRole: 'VP of Revenue · Meridian Health',
+    charMood: 'neutral',
+    narration: "Alone with Marcus. The room is quiet. He's read the proposal. He's holding a printed copy — yellow highlighter marks on page three. This is the moment the deal gets decided.",
+    consequence: { flagTrigger: 'TOM IS HOSTILE', text: "Marcus opens with: 'Tom raised some concerns after the meeting. He thinks you were dismissive of his work.' The room is charged before you've said a word.", type:'bad' },
+    speech: { speaker: 'MARCUS WEBB', text: "Your numbers are compelling. My concern is implementation risk. We tried something like this three years ago — it was a disaster. My team spent six months undoing the damage. How do I know this is different?" },
+    method: 'MEDDIC — Decision Criteria + Risk', methodHint: "Marcus is sharing a painful past experience. This is the most important objection in the deal. Don't minimize it. Don't rush past it. Address it directly and specifically.",
+    sceneLabel: 'ECONOMIC BUYER',
+    choices: [
+      {
+        text: "That experience sounds like it was genuinely damaging — I don't want to minimize that. Can you tell me what broke down? I want to understand specifically so I can show you how we'd handle those moments differently.",
+        quality: 'good', pts: 30,
+        header: 'Address the History',
+        feedback: "You asked Marcus to describe the failure before you defended against it. This is exactly right. Now you can address the specific breakdown — not a generic 'our implementation is great' claim.",
+        coaching: "SPIN — NEED PAYOFF: 'Tell me what broke down' surfaces Marcus's specific decision criteria. His answer tells you exactly what you need to promise — and prove.",
+        setFlag: { name: 'ADDRESSED RISK', type: 'good' }, trustDelta: 20, dealDelta: 20,
+        next: 'the_stall'
+      },
+      {
+        text: "Our implementation success rate is 94% and we have a dedicated CSM from day one. I can share three case studies from healthcare companies your size.",
+        quality: 'neutral', pts: 12,
+        header: 'Stats & Social Proof',
+        feedback: "The data is relevant but you led with it before earning the right. Marcus shared a painful experience and you responded with a stat. That's not wrong, but it feels transactional. He needs to feel heard first.",
+        coaching: "TIP: Acknowledge the experience before presenting evidence. 'Three years of damage is serious — let me show you specifically how our model prevents that' lands better than leading with 94%.",
+        setFlag: null, trustDelta: 5, dealDelta: 5,
+        next: 'the_stall'
+      },
+      {
+        text: "Honestly, no implementation is without risk. What I can commit to is transparency — if something goes sideways, you'll know about it from me before it becomes a problem.",
+        quality: 'good', pts: 24,
+        header: 'Radical Transparency',
+        feedback: "This is a high-trust, high-credibility move. You're not promising perfection — you're promising honesty. For an executive who got burned by a vendor who hid problems, this response can be deeply compelling.",
+        coaching: "TRUST TIP: With executives who have been burned before, the promise of proactive transparency is sometimes more powerful than a success rate stat. It signals partnership, not salesmanship.",
+        setFlag: { name: 'TRUST BUILT', type: 'good' }, trustDelta: 18, dealDelta: 14,
+        next: 'the_stall'
+      },
+    ]
+  },
+
+  // ─── CH 6: THE STALL ───
+  {
+    id: 'the_stall',
+    bg: 'office',
+    chapter: 'CHAPTER 7',
+    title: 'Gone Dark',
+    charName: 'Dana Reeves',
+    charRole: 'Director of Sales Operations · Meridian Health',
+    charMood: 'neutral',
+    narration: "Eighteen days of silence. Dana's last reply was 'still working through some things internally.' Your CRM is showing the deal at risk. You need to re-engage — carefully.",
+    consequence: { flagTrigger: 'DAMAGED CHAMPION', text: "Your champion is less invested. Her responses have been shorter. She's not advocating — she's waiting for you to fix what happened.", type:'bad' },
+    speech: { speaker: 'YOU (Writing outreach)', text: "You're composing an email to Dana. The deal has gone quiet. What do you say?" },
+    method: 'Outreach + Objection Prevention', methodHint: "Deals go dark when something changed internally that no one told you about. Your job isn't to 'check in' — it's to surface what changed and give Dana a reason to re-engage.",
+    sceneLabel: 'THE STALL',
+    choices: [
+      {
+        text: "Dana — eighteen days is a long time in a deal. I'd rather know if something's shifted than wonder. Can you give me five minutes this week — not to pitch, just to understand where things stand?",
+        quality: 'good', pts: 28,
+        header: 'Direct Re-Engagement',
+        feedback: "This email works because it's honest, specific, and asks for almost nothing. 'I'd rather know if something's shifted' signals maturity and removes pressure. It invites Dana to be honest with you, which is what you need.",
+        coaching: "OUTREACH TIP: The break-up framing ('I'd rather know') is powerful because it forces a response. Silence is now a choice Dana has to make consciously — and most people don't choose it.",
+        setFlag: { name: 'DEAL REVIVED', type: 'good' }, trustDelta: 10, dealDelta: 10,
+        next: 'the_competitor'
+      },
+      {
+        text: "Dana — just circling back on our last conversation. Wanted to see if there were any questions I could help answer. Happy to jump on a call whenever works for you!",
+        quality: 'bad', pts: 0,
+        header: '"Circling Back" Email',
+        feedback: "This is the most ignored email in sales. 'Circling back' signals you have nothing new to offer. Dana has nothing to respond to — and every day that passes makes it easier to stay silent.",
+        coaching: "TRAP: Generic follow-ups create silence. Every re-engagement email needs one of three things: new information, a direct question, or an honest acknowledgment that something may have changed.",
+        setFlag: { name: 'WEAK FOLLOW-UP', type: 'bad' }, trustDelta: -5, dealDelta: -15,
+        next: 'the_competitor'
+      },
+      {
+        text: "Dana — I noticed Meridian just posted three new sales manager roles. Curious if the expansion is connected to the onboarding challenges we discussed — or creating new ones. Worth a quick call?",
+        quality: 'good', pts: 30,
+        header: 'Research-Led Re-Engagement',
+        feedback: "This is elite-level outreach. You've done external research, connected it to the problem you originally discussed, and made the ask feel like a natural follow-on — not a desperate check-in.",
+        coaching: "CHALLENGER: Insight-led re-engagement restores your value. You're not asking about your deal — you're showing you're paying attention to their business. That's the difference between a vendor and a partner.",
+        setFlag: { name: 'DEAL REVIVED', type: 'good' }, trustDelta: 18, dealDelta: 15,
+        next: 'the_competitor'
+      },
+    ]
+  },
+
+  // ─── CH 7: THE COMPETITOR ───
+  {
+    id: 'the_competitor',
+    bg: 'conference',
+    chapter: 'CHAPTER 8',
+    title: 'The Competitor',
+    charName: 'Marcus Webb',
+    charRole: 'VP of Revenue · Meridian Health',
+    charMood: 'guarded',
+    narration: "Marcus calls you directly — which is unusual. He tells you Apex Systems has come in with a proposal. Their price is 22% lower. He's giving you a chance to respond.",
+    consequence: { flagTrigger: 'WEAK FOLLOW-UP', text: "Marcus opens with: 'I have to be honest — during the weeks we didn't hear from you, Apex filled the gap. They've been very attentive.' You're starting from behind.", type:'bad' },
+    speech: { speaker: 'MARCUS WEBB', text: "Apex came in at about 22% below your number. They seem capable. Help me understand why the premium is justified — and I need more than 'we're better.'" },
+    method: 'Negotiation + Value Defense', methodHint: "Marcus is asking for a value argument, not a price match. Never chase a competitor's price — reframe around risk, outcomes, and total cost of ownership.",
+    sceneLabel: 'COMPETITIVE THREAT',
+    choices: [
+      {
+        text: "22% less on license. But here's what that number doesn't include: their average implementation is 4.5 months versus our 7 weeks. At your team's loaded cost, that gap is around $180K. The 'cheaper' option may actually cost more.",
+        quality: 'good', pts: 30,
+        header: 'TCO Reframe',
+        feedback: "This is how you compete on value, not price. You've reframed the conversation from 'license cost' to 'total cost of ownership' — and you've done it with a specific number Marcus can verify and defend internally.",
+        coaching: "NEGOTIATION: 'Lower price' objections almost always ignore implementation time, change management, and productivity loss during onboarding. Quantify the full picture and the 'cheaper' option rarely holds up.",
+        setFlag: { name: 'VALUE DEFENDED', type: 'good' }, trustDelta: 15, dealDelta: 20,
+        next: 'the_close'
+      },
+      {
+        text: "I can look at what's possible on our side — let me talk to my manager and see if there's any flexibility we haven't explored.",
+        quality: 'bad', pts: 0,
+        header: 'Chasing the Price',
+        feedback: "The moment you say 'let me see what I can do,' you've validated that your price was negotiable all along. Marcus now knows he can keep pushing — and Apex just got a 22% price advantage for free.",
+        coaching: "NEGOTIATION TRAP: Never move on price without a trade. If you flex, always get something in return: longer term, faster decision, expanded scope. Price movement without a trade signals desperation.",
+        setFlag: { name: 'PRICE CONCEDED', type: 'bad' }, trustDelta: -10, dealDelta: -15,
+        next: 'the_close'
+      },
+      {
+        text: "I'd ask you to consider what happens if the lower-cost option doesn't deliver. Three years ago you spent six months undoing implementation damage. What's that worth against a 22% price difference?",
+        quality: 'good', pts: 26,
+        header: 'Risk Anchor',
+        feedback: "You've turned Marcus's own history into your most powerful argument. This is the Challenger move — using what you know about their past to reframe the present decision around risk, not price.",
+        coaching: "CHALLENGER: Referencing the executive's own stated fears is the most credible form of persuasion. You're not telling Marcus to be afraid — he already is. You're helping him see the connection.",
+        setFlag: { name: 'RISK ANCHORED', type: 'good' }, trustDelta: 14, dealDelta: 16,
+        next: 'the_close'
+      },
+    ]
+  },
+
+  // ─── CH 8: THE CLOSE ───
+  {
+    id: 'the_close',
+    bg: 'close',
+    chapter: 'CHAPTER 9',
+    title: 'The Final Close',
+    charName: 'Marcus Webb',
+    charRole: 'VP of Revenue · Meridian Health',
+    charMood: 'neutral',
+    narration: "The proposal is on the table. Dana is in the room. Tom is noticeably absent — which could mean anything. Marcus picks up the document. Reads page three again. Sets it down.",
+    consequence: { flagTrigger: 'PRICE CONCEDED', text: "Marcus opens with: 'I want to revisit the pricing — if you moved once, I'm wondering if there's more room.' Your earlier concession is already costing you.", type:'bad' },
+    speech: { speaker: 'MARCUS WEBB', text: "This is close. I have two things. One — I want a 90-day pilot before full commitment. Two — I need a 15% reduction from the proposal price. If you can do both, we have a deal." },
+    method: 'Closing + Negotiation', methodHint: "Two asks at close. Classic pressure move. Don't accept both. Don't reject both. Isolate, trade, and control the terms — or lose margin and set a bad precedent.",
+    sceneLabel: 'THE CLOSE',
+    choices: [
+      {
+        text: "I can work with you on one of those — but not both. The pilot, yes — that's worth doing to make sure implementation lands right. The 15% discount changes the economics for us. If the pilot goes well, I'd rather revisit scope expansion than discount from day one.",
+        quality: 'good', pts: 30,
+        header: 'Strategic Trade',
+        feedback: "This is elite closing. You've accepted the lower-risk ask (pilot) and declined the higher-cost one (discount), while offering a future path that feels like a win for Marcus. You've maintained margin and set healthy negotiation norms.",
+        coaching: "NEGOTIATION: Never accept two asks simultaneously — it signals you had room all along. Saying yes to one and redirecting the other keeps you in control while appearing collaborative.",
+        setFlag: { name: 'STRONG CLOSE', type: 'good' }, trustDelta: 15, dealDelta: 20,
+        next: null
+      },
+      {
+        text: "A pilot makes sense. On the 15% — I can get to 8% if we do a 24-month term instead of 12. That protects both sides.",
+        quality: 'good', pts: 22,
+        header: 'Counter with Trade',
+        feedback: "Good trade — you didn't just give the discount, you extracted something in return (term length). This is clean negotiation. The discount is smaller and the trade creates mutual commitment.",
+        coaching: "NEGOTIATION: Any price move should come with a term or scope trade. 'I can get to X if you do Y' is the structure. Never give without getting.",
+        setFlag: { name: 'NEGOTIATED CLOSE', type: 'good' }, trustDelta: 10, dealDelta: 14,
+        next: null
+      },
+      {
+        text: "Both are doable. Let me loop in my manager today and we'll get you a revised proposal by EOD.",
+        quality: 'bad', pts: 0,
+        header: 'Capitulation',
+        feedback: "You accepted both requests without negotiating either. Marcus will wonder what else he could have asked for — and your manager will wonder why you folded. You've set a precedent that will haunt the renewal conversation.",
+        coaching: "CLOSING TRAP: Accepting both asks feels like 'just getting it done' but it's actually the most expensive close you can make. You've trained Marcus that pressure works on you.",
+        setFlag: { name: 'CAPITULATED', type: 'bad' }, trustDelta: -5, dealDelta: -10,
+        next: null
+      },
+    ]
+  },
+
+];
+
+// ══════════════════════════════════════════
+//  ENGINE
+// ══════════════════════════════════════════
+let currentChapterIdx = 0;
+let pendingNext = null;
+let gameRunning = false;
+
+function startGame() {
+  state = { trust:50, deal:100, score:0, flags:[], log:[] };
+  currentChapterIdx = 0;
+  showScreen('screen-game');
+  renderChapter(chapters[0]);
+}
+
+function showScreen(id) {
+  document.querySelectorAll('.screen').forEach(s => s.classList.remove('active'));
+  document.getElementById(id).classList.add('active');
+  window.scrollTo({top:0, behavior:'smooth'});
+}
+
+function updateMeters() {
+  const t = Math.max(0, Math.min(100, state.trust));
+  const d = Math.max(0, Math.min(100, state.deal));
+  document.getElementById('trustMeter').style.width = t + '%';
+  document.getElementById('dealMeter').style.width = d + '%';
+  document.getElementById('trustVal').textContent = t;
+  document.getElementById('dealVal').textContent = d;
+  document.getElementById('scoreVal').textContent = state.score;
+
+  const dm = document.getElementById('dealMeter');
+  dm.className = 'meter-fill deal' + (d < 30 ? ' danger' : d < 60 ? ' warn' : '');
+}
+
+function renderChapter(ch) {
+  document.getElementById('feedbackPanel').style.display = 'none';
+  document.getElementById('feedbackPanel').innerHTML = '';
+
+  // Status bar
+  document.getElementById('chapterBadge').textContent = `${ch.chapter} · ${ch.title.toUpperCase()}`;
+  updateMeters();
+
+  // Scene bg
+  document.getElementById('sceneBg').style.background = bgStyles[ch.bg] || bgStyles.office;
+
+  // Character card
+  if (ch.charName) {
+    document.getElementById('charNameCard').style.display = 'block';
+    document.getElementById('charName').textContent = ch.charName;
+    document.getElementById('charRole').textContent = ch.charRole;
+  } else {
+    document.getElementById('charNameCard').style.display = 'none';
+  }
+
+  // Mood badge
+  const mood = moodStyles[ch.charMood] || moodStyles.neutral;
+  const mb = document.getElementById('moodBadge');
+  mb.textContent = mood.text;
+  mb.style.cssText = `background:${mood.bg};border-color:${mood.border};color:${mood.color};position:absolute;top:16px;right:24px;font-family:'Source Code Pro',monospace;font-size:10px;letter-spacing:2px;padding:5px 12px;border:1px solid;text-transform:uppercase;`;
+
+  // Scene label
+  document.getElementById('sceneLabel').textContent = ch.sceneLabel || '';
+
+  // Flags row
+  renderFlags();
+
+  // Build scene content
+  const sc = document.getElementById('sceneContent');
+  sc.className = 'scene-enter';
+  sc.innerHTML = '';
+
+  // Chapter header
+  sc.innerHTML += `<div class="chapter-header">${ch.chapter}</div>`;
+  sc.innerHTML += `<div class="scene-title-text">${ch.title}</div>`;
+
+  // Consequence banner
+  let bannerHtml = '';
+  if (ch.consequence && state.flags.some(f => f.name === ch.consequence.flagTrigger)) {
+    const isBad = ch.consequence.type === 'bad';
+    bannerHtml = `<div class="consequence-banner show ${isBad ? '' : 'good-banner'}">⚑ ${ch.consequence.text}</div>`;
+  }
+  sc.innerHTML += bannerHtml;
+
+  // Narration
+  if (ch.narration) {
+    sc.innerHTML += `<p class="narration">${ch.narration}</p>`;
+  }
+
+  // Speech
+  if (ch.speech) {
+    sc.innerHTML += `<div class="speech-wrap"><div class="speech-speaker">${ch.speech.speaker}</div><div class="speech-text">${ch.speech.text}</div></div>`;
+  }
+
+  // Method callout
+  if (ch.method) {
+    sc.innerHTML += `<div class="method-callout"><span class="method-tag">${ch.method}</span><span class="method-hint">${ch.methodHint}</span></div>`;
+  }
+
+  // Choices
+  sc.innerHTML += `<div class="choices-header">— YOUR RESPONSE —</div>`;
+  sc.innerHTML += `<div class="choices-grid" id="choicesGrid"></div>`;
+
+  const grid = document.getElementById('choicesGrid');
+  const shuffled = [...ch.choices].sort(() => Math.random() - 0.5);
+  shuffled.forEach((c, i) => {
+    const btn = document.createElement('button');
+    btn.className = 'choice-card';
+    btn.innerHTML = `<span class="choice-letter">${String.fromCharCode(65+i)}</span><span class="choice-text">${c.text}</span>`;
+    btn.onclick = () => selectChoice(c, ch);
+    grid.appendChild(btn);
+  });
+
+  // Scroll to content
+  setTimeout(() => document.getElementById('dialogPanel').scrollIntoView({behavior:'smooth', block:'start'}), 100);
+}
+
+function renderFlags() {
+  const row = document.getElementById('flagsRow');
+  row.innerHTML = '';
+  state.flags.slice(-4).forEach(f => {
+    const el = document.createElement('span');
+    el.className = `flag ${f.type}`;
+    el.textContent = f.name;
+    row.appendChild(el);
+  });
+}
+
+function selectChoice(choice, ch) {
+  // Apply deltas
+  state.trust += (choice.trustDelta || 0);
+  state.deal += (choice.dealDelta || 0);
+  state.score += (choice.pts || 0);
+  state.trust = Math.max(0, Math.min(100, state.trust));
+  state.deal = Math.max(0, Math.min(100, state.deal));
+
+  // Set flag
+  if (choice.setFlag) {
+    state.flags.push(choice.setFlag);
+  }
+
+  // Log
+  state.log.push({ chapter: ch.chapter, title: ch.title, header: choice.header, pts: choice.pts, quality: choice.quality });
+
+  updateMeters();
+  renderFlags();
+
+  // Determine next
+  pendingNext = choice.next;
+
+  // Show feedback
+  showFeedback(choice, ch);
+}
+
+function showFeedback(choice, ch) {
+  // Hide choices
+  document.getElementById('sceneContent').querySelector('.choices-grid') && (document.getElementById('sceneContent').style.opacity = '0.4');
+
+  const fp = document.getElementById('feedbackPanel');
+  fp.style.display = 'block';
+  fp.innerHTML = '';
+
+  const qualMap = { good:'good', bad:'bad', neutral:'neutral', trap:'trap' };
+  const cls = qualMap[choice.quality] || 'neutral';
+
+  // Consequence note for this choice
+  const hasConsequence = choice.setFlag && choice.setFlag.type === 'bad';
+
+  fp.innerHTML = `
+    <hr class="gold-rule">
+    <div class="feedback-result ${cls}">
+      <div class="feedback-header-text">${choice.header}</div>
+      <div class="feedback-body">${choice.feedback}</div>
+      <div class="coaching-block"><span class="fw">[${ch.method}]</span> ${choice.coaching}</div>
+      ${hasConsequence ? `<div class="consequence-note show">⚑ Consequence unlocked: <strong>${choice.setFlag.name}</strong> — this may affect later scenes.</div>` : ''}
+      ${choice.setFlag && choice.setFlag.type === 'good' ? `<div class="consequence-note show" style="border-color:rgba(39,174,96,0.3);background:rgba(39,174,96,0.06);color:#70c080;">✓ Advantage gained: <strong>${choice.setFlag.name}</strong></div>` : ''}
+    </div>
+    <div style="margin-top:12px;display:flex;gap:10px;align-items:center;">
+      <button class="next-btn" onclick="advanceStory()">${pendingNext ? 'Continue the Deal →' : 'See Results →'}</button>
+      <span style="font-family:'Source Code Pro',monospace;font-size:11px;color:var(--muted);">+${choice.pts} pts · Trust: ${state.trust} · Deal: ${state.deal}</span>
+    </div>
+  `;
+
+  fp.scrollIntoView({behavior:'smooth', block:'nearest'});
+}
+
+function advanceStory() {
+  if (!pendingNext) {
+    showFinalScore();
+    return;
+  }
+
+  const nextCh = chapters.find(c => c.id === pendingNext);
+  if (!nextCh) { showFinalScore(); return; }
+
+  currentChapterIdx = chapters.indexOf(nextCh);
+  document.getElementById('sceneContent').style.opacity = '1';
+  window.scrollTo({top:0, behavior:'smooth'});
+  setTimeout(() => renderChapter(nextCh), 300);
+}
+
+function showFinalScore() {
+  const max = chapters.length * 30;
+  const pct = Math.round((state.score / max) * 100);
+
+  let tier, comment, color;
+  if (pct >= 85) {
+    tier = '🏆 Master Closer';
+    comment = "You read every room, protected your champion, neutralized the skeptic, and closed on your terms. This is what elite enterprise selling looks like.";
+    color = 'var(--gold)';
+  } else if (pct >= 65) {
+    tier = '📈 Rising Closer';
+    comment = "Strong instincts and real strategic thinking. A few moments of pressure caused slippage — but the foundation is solid. Review the consequence flags for your growth areas.";
+    color = '#4eca7a';
+  } else if (pct >= 40) {
+    tier = '🎯 In Training';
+    comment = "You navigated the deal but left significant value on the table. Some early decisions created downstream consequences that cost you at the close. The coaching notes tell the story.";
+    color = 'var(--warn)';
+  } else {
+    tier = '📖 Back to Basics';
+    comment = "The deal slipped — and it started early. The flags tell you exactly where. Discovery, champion building, and political awareness are your focus areas.";
+    color = 'var(--red)';
+  }
+
+  document.getElementById('finalScore').textContent = state.score;
+  document.getElementById('finalScore').style.color = color;
+  document.getElementById('finalTier').textContent = tier;
+  document.getElementById('finalTier').style.color = color;
+  document.getElementById('finalComment').textContent = comment;
+
+  // Score log
+  const logEl = document.getElementById('scoreLog');
+  logEl.innerHTML = '';
+  state.log.forEach(r => {
+    const qualColor = r.quality==='good'?'#4eca7a':r.quality==='bad'?'#e05545':'#e8a030';
+    logEl.innerHTML += `
+      <div class="log-row">
+        <div>
+          <div class="log-chapter">${r.chapter} · ${r.title}</div>
+          <div class="log-result" style="color:${qualColor}">${r.header}</div>
+        </div>
+        <div class="log-pts">+${r.pts}</div>
+      </div>`;
+  });
+  // Total
+  logEl.innerHTML += `<div class="log-row" style="background:var(--surface)"><div style="font-weight:700">Total Score</div><div class="log-pts" style="font-size:16px">${state.score}</div></div>`;
+
+  // Flags
+  const flagsEl = document.getElementById('finalFlags');
+  flagsEl.innerHTML = '';
+  if (state.flags.length === 0) {
+    flagsEl.innerHTML = '<span style="font-size:12px;color:var(--muted);">No significant flags — clean deal.</span>';
+  } else {
+    state.flags.forEach(f => {
+      flagsEl.innerHTML += `<span class="flag ${f.type}">${f.name}</span>`;
+    });
+  }
+
+  showScreen('screen-score');
+}
+
+function resetGame() {
+  startGame();
+}
+
+// Init
+showScreen('screen-title');
+</script>
+</body>
+</html>
